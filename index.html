@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUXILIAR ESTAGIARIOS - Expurgos</title> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Biblioteca PDF.js (para LER o PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <!-- Biblioteca Papa Parse (para LER o CSV) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Biblioteca SheetJS (para LER o XLSX/Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
+        .btn-copy {
+            background-color: #e0e7ff; color: #4338ca; font-size: 0.75rem;
+            padding: 2px 6px; border-radius: 4px; font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-copy:hover { background-color: #c7d2fe; }
+        .btn-copy:active { transform: scale(0.95); }
+        .copy-feedback {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background-color: #22c55e; color: white; padding: 2px 8px; border-radius: 4px;
+            font-size: 0.75rem; margin-bottom: 4px; opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none; white-space: nowrap;
+        }
+        .copy-feedback.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+        }
+        #dropzone {
+            border: 2px dashed #cbd5e1;
+            background-color: #f8fafc;
+            transition: all 0.3s ease;
+        }
+        #dropzone.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25em 0.6em;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+        .status-sucesso { background-color: #dcfce7; color: #166534; }
+        .status-erro { background-color: #fee2e2; color: #991b1b; }
+        .status-alerta { background-color: #fef9c3; color: #854d0e; }
+        .status-info { background-color: #e0f2fe; color: #075985; }
+        .btn-secundario {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s ease;
+        }
+        .btn-secundario:hover {
+            background-color: #e5e7eb;
+        }
+        .btn-primario-pequeno {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s ease;
+        }
+        .btn-primario-pequeno:hover {
+            background-color: #4338ca;
+        }
+        .btn-primario-pequeno:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+        /* Estilo para campos de dados automáticos */
+        .auto-field {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        .auto-field.success {
+            border-color: #10b981;
+        }
+        /* Estilos para os novos botões de link rápido */
+        .btn-link-rapido {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-align: center;
+            transition: opacity 0.2s ease;
+            display: inline-block;
+        }
+        .btn-link-rapido:hover {
+            opacity: 0.9;
+        }
+        .btn-pje {
+            background-image: linear-gradient(to right, #f97316, #1e3a8a); 
+        }
+        .btn-acordo {
+            background-color: #20627e; 
+        }
+        .btn-legalone {
+            background-color: #ff6a00; 
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 p-4 bg-white rounded-lg shadow-sm">
+            <h1 class="text-3xl font-bold text-gray-800">Expurgos</h1>
+            <p class="text-gray-600 mt-1">Aviso: Esta ferramenta otimiza o tempo,
+                 mas não substitui o calculador. O usuário deve sempre conferir os números que a IA usou como base de cálculo.</p>
+        </header>
+
+
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4"></h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="https://sso.cloud.pje.jus.br/auth/realms/pje/protocol/openid-connect/auth?response_type=code&client_id=pje-tjpe-1g-cloud&redirect_uri=https%3A%2F%2Fpje.cloud.tjpe.jus.br%2F1g%2Flogin.seam&state=d7898282-f46e-4271-8887-493bac7142e3&login=true&scope=openid" target="_blank" class="btn-link-rapido btn-pje">
+                    PJe - 1º Grau
+                </a>
+                <a href="https://sso.cloud.pje.jus.br/auth/realms/pje/protocol/openid-connect/auth?response_type=code&client_id=pje-tjpe-2g-cloud&redirect_uri=https%3A%2F%2Fpje.cloud.tjpe.jus.br%2F2g%2Flogin.seam%3Bjsessionid%3DDI0LDQ-H6hKdv0PeE6vxJfCJn6GJL9K7nfZ-p6wN.pje-2g-8?cid%3D62372&state=fae9129a-147d-43c1-a513-d7760c679ad0&login=true&scope=openid" target="_blank" class="btn-link-rapido btn-pje">
+                    PJe - 2º Grau
+                </a>
+                <a href="https://portalacordo.pagamentodapoupanca.com.br/" target="_blank" class="btn-link-rapido btn-acordo">
+                    Portal de Acordos
+                </a>
+                <a href="https://signon.thomsonreuters.com/?productId=L1NJ&returnto=https%3a%2f%2flogin.novajus.com.br%2fOnePass%2fLoginOnePass%2f&bhcp=1" target="_blank" class="btn-link-rapido btn-legalone">
+                    Legal One
+                </a>
+            </div>
+        </div>
+
+
+        
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">1: Carregar Base de Clientes</h2>
+        
+            <div class="flex items-center space-x-4">
+                <input type="file" id="csv-upload" class="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                <button id="btn-load-csv" class="btn-primario-pequeno">Carregar Ficheiro CSV/Excel</button>
+                <div id="csv-status" class="font-medium">
+                    <span class="text-red-600">Base de clientes não carregada.</span>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- PASSO 1: Enviar Extrato -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">2: Extrato de Poupança</h2>
+            
+            <div id="dropzone" class="flex justify-center items-center w-full h-48 rounded-lg text-center p-6 cursor-pointer">
+                <input type="file" id="file-upload" class="hidden" accept="application/pdf, image/png, image/jpeg">
+                <div class="text-gray-500">
+                    <svg class="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <p class="mt-2 font-medium text-gray-700">Arraste e solte o arquivo aqui</p>
+                    <p class="text-sm">ou <span class="font-semibold text-blue-600">clique para selecionar</span> (PDF ou Imagem)</p>
+                    <p id="file-name" class="text-sm mt-2 font-medium text-green-700"></p>
+                </div>
+            </div>
+            
+            <div class="text-right mt-4">
+                <button id="btn-analisar" class="px-6 py-2 text-base font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400" disabled>
+                    Analisar Extrato
+                </button>
+            </div>
+        </div>
+
+        <!-- PASSO 2: Resultados da IA -->
+        <div id="output-area">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">3: Dados Extraídos (Double Check)</h2>
+            
+            <div id="loading-state" class="hidden flex-col items-center justify-center bg-white p-10 rounded-lg shadow-sm">
+                <div class="spinner"></div>
+                <p id="loading-message" class="mt-4 text-gray-600 font-medium">Analisando extrato com IA...</p>
+            </div>
+
+            <div id="error-state" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
+                <h3 class="font-bold text-red-800">Erro na Análise</h3>
+                <p class="text-red-700" id="error-message"></p>
+            </div>
+
+            <p id="empty-state" class="text-center text-gray-500 bg-white p-10 rounded-lg shadow-sm">Aguardando arquivo para análise.</p>
+            
+            <div id="dados-gerais-container" class="hidden bg-white p-5 rounded-lg shadow-md border border-gray-200 mb-4">
+                 <!-- Secção Titular e Banco -->
+                 <div class="flex justify-between items-start">
+                     <div>
+                        <h3 class="text-xl font-semibold text-blue-700 mb-2 data-titular"></h3>
+                        <div class="text-base text-gray-700 mb-4">
+                            <span class="font-medium">Banco:</span>
+                            <span class="data-banco"></span>
+                        </div>
+                     </div>
+                     <button id="btn-search-legalone" class="btn-secundario flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        Procurar no Legal One
+                     </button>
+                 </div>
+                 
+                 <!-- Secção: Verificação Manual -->
+                 <div id="verificacao-manual-wrapper" class="pt-4 border-t border-gray-200">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Verificação Manual do Cliente</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Campo CPF -->
+                        <div>
+                            <label for="input-cpf" class="block text-xs font-medium text-gray-600 mb-1">CPF do Titular</label>
+                            <input type="text" id="input-cpf" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
+                        </div>
+                        <!-- Campo Data de Nascimento -->
+                        <div>
+                            <label for="input-nascimento" class="block text-xs font-medium text-gray-600 mb-1">Data de Nascimento</label>
+                            <input type="text" id="input-nascimento" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
+                        </div>
+                        <!-- Botão Receita -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">&nbsp;</LabeL>
+                            <button id="btn-check-receita" class="w-full btn-secundario text-sm py-1.5" disabled>
+                                Verificar na Receita Federal
+                            </button>
+                        </div>
+                        <!-- Campo Telefone -->
+                        <div>
+                            <label for="input-telefone" class="block text-xs font-medium text-gray-600 mb-1">Telefone</label>
+                            <input type="text" id="input-telefone" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
+                        </div>
+                         <!-- Campo Tipo de Cliente -->
+                        <div>
+                            <label for="input-tipo-cliente" class="block text-xs font-medium text-gray-600 mb-1">Tipo de Cliente</label>
+                            <input type="text" id="input-tipo-cliente" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
+                        </div>
+                        <!-- Status do Cliente -->
+                        <div>
+                            <label for="select-status-cliente" class="block text-xs font-medium text-gray-600 mb-1">Status do Cliente</label>
+                            <select id="select-status-cliente" class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="Pendente">Pendente</option>
+                                <option value="Vivo (Regular)">Vivo (Regular)</option>
+                                <option value="Titular Falecido">Titular Falecido</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                 </div>
+
+                 <!-- Secção: Aditivo ACP -->
+                 <div id="acp-selector-wrapper" class="hidden pt-4 border-t border-gray-200 mt-4">
+                    <label for="acp-selector" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Cálculo (Aditivo ACP)</label>
+                    <select id="acp-selector" class="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="geral">Regra Geral do Acordo</option>
+                    </select>
+                 </div>
+            </div>
+
+            <!-- Container: Totalizador -->
+            <div id="resultado-total" class="mb-4">
+            </div>
+            
+            <!-- Container: Planos -->
+            <div id="planos-container" class="space-y-4">
+            </div>
+
+            <!-- Container: Relatório Visual -->
+            <div id="relatorio-container" class="hidden mt-6">
+            </div>
+        </div>
+    </div>
+
+    <!-- Template: Totalizador -->
+    <template id="total-template">
+        <div class="plano-card bg-blue-50 p-5 rounded-lg shadow-md border border-blue-200">
+            <h3 class="text-xl font-semibold text-blue-800 mb-4">Resultado Consolidado</h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+                <div>
+                    <span class="block text-xs font-medium text-gray-500">Valor Base (Soma)</span>
+                    <span class="text-base text-gray-800 font-bold data-total-bruto">R$ 0,00</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-medium text-gray-500">Faixa de Desconto</span>
+                    <span class="text-base text-gray-800 font-bold data-total-faixa">Sem desconto</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-medium text-gray-500">Desconto Aplicado</span>
+                    <span class="text-base text-red-700 font-bold data-total-desconto">- R$ 0,00</span>
+                </div>
+            </div>
+            <div class="mt-6 pt-4 border-t border-blue-200">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-semibold text-gray-700">Valor Líquido Estimado:</span>
+                    <span class="text-2xl font-bold text-green-700 data-total-liquido">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- Card de Plano -->
+    <template id="plano-template">
+        <div class="plano-card bg-white p-5 rounded-lg shadow-md border border-gray-200">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="text-lg font-semibold text-gray-800 data-plano-nome"></h3>
+                <span class="status-badge status-alerta data-plano-status">Verificando...</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mb-4 pt-3 border-t border-gray-100">
+                <div class="relative copy-wrapper">
+                    <span class="block text-xs font-medium text-gray-500">Agência</span>
+                    <span class="text-base text-gray-800 data-plano-agencia"></span>
+                    <button class="btn-copy" data-copy-target="data-plano-agencia">Copiar</button>
+                    <div class="copy-feedback">Copiado!</div>
+                </div>
+                <div class="relative copy-wrapper">
+                    <span class="block text-xs font-medium text-gray-500">Conta</span>
+                    <span class="text-base text-gray-800 data-plano-conta"></span>
+                    <button class="btn-copy" data-copy-target="data-plano-conta">Copiar</button>
+                    <div class="copy-feedback">Copiado!</div>
+                </div>
+            </div>
+            
+            <!-- grelha de 4 colunas -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-6 gap-y-4 pt-3 border-t border-gray-100">
+                <div class="relative copy-wrapper">
+                    <span class="block text-xs font-medium text-gray-500">Data de Referência</span>
+                    <span class="text-base text-gray-800 font-bold data-plano-referencia"></span>
+                </div>
+
+                <div class="relative copy-wrapper">
+                    <span class="block text-xs font-medium text-gray-500">Saldo (do Extrato)</span>
+                    <span class="text-base text-gray-800 font-bold data-plano-saldo"></span>
+                    <button class="btn-copy" data-copy-target="data-plano-saldo">Copiar</button>
+                    <div class="copy-feedback">Copiado!</div>
+                </div>
+                <div class="relative copy-wrapper">
+                    <span class="block text-xs font-medium text-gray-500">Data-Base (Aniversário)</span>
+                    <span class="text-base text-gray-800 font-bold data-plano-aniversario"></span>
+                    <button class="btn-copy" data-copy-target="data-plano-aniversario">Copiar</button>
+                    <div class="copy-feedback">Copiado!</div>
+                </div>
+                <div class="relative copy-wrapper">
+                    <span class="block text-xs font-medium text-gray-500">Valor Base (Calculado)</span>
+                    <span class="text-base text-green-700 font-bold data-plano-valorbase"></span>
+                    <button class="btn-copy" data-copy-target="data-plano-valorbase">Copiar</button>
+                    <div class="copy-feedback">Copiado!</div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Alerta CAIXA -->
+    <template id="alerta-caixa-template">
+        <div class="plano-card bg-amber-50 p-5 rounded-lg shadow-md border border-amber-300">
+            <h3 class="text-lg font-semibold text-amber-800">Plano Verão (CAIXA - ACP PROJUST)</h3>
+            <span class="status-badge status-alerta">ANÁLISE MANUAL REQUERIDA</span>
+            <p class="mt-3 text-sm text-amber-900">
+                O cálculo para esta ACP (Processo n. 0004511-21.2003.404.7200) depende de "valores incontroversos" e depósitos judiciais, conforme Cláusulas 6.1 'g' a 'g.4'.
+            </p>
+            <ul class="list-disc list-inside mt-2 text-sm text-amber-900 space-y-1">
+                <li>**Caso 1 (Sem depósito/reconhecimento):** Aplicar "Regra Geral" (fator 5,21333 + redutores).</li>
+                <li>**Caso 2 (Com depósito e reconhecimento):** Valor = "Valor Incontroverso" (limitado ao depósito).</li>
+                <li>Verificar Cláusula 6.1 'g.2': Se houver reconhecimento e depósito, **não aplicar redutores**.</li>
+                <li>Verificar Cláusula 6.1 'g.1' sobre honorários.</li>
+            </ul>
+        </div>
+    </template>
+
+    <!-- Relatório Visual (substitui o <textarea>) -->
+    <template id="relatorio-template">
+        <div id="card-relatorio-visual" class="bg-gray-50 p-5 rounded-lg shadow-md border border-gray-200 mt-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Resumo da Análise</h3>
+                <button id="btn-copy-relatorio" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    Copiar Relatório
+                </button>
+            </div>
+            
+            <!-- Div de visualização direta com formatação de quebra de linha -->
+            <div class="relative">
+                <div id="relatorio-texto" class="w-full p-3 font-mono text-sm bg-gray-100 border border-gray-300 rounded-md overflow-x-auto" style="white-space: pre-wrap;">Gerando relatório...</div>
+                <div class="copy-feedback" id="relatorio-feedback">Copiado!</div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- Canvas oculto para renderizar o PDF -->
+    <canvas id="pdf-canvas" class="hidden"></canvas>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Definições de Elementos
+            const dropzone = document.getElementById('dropzone');
+            const fileUpload = document.getElementById('file-upload');
+            const fileNameDisplay = document.getElementById('file-name');
+            const btnAnalisar = document.getElementById('btn-analisar');
+            
+            const loadingState = document.getElementById('loading-state');
+            const loadingMessage = document.getElementById('loading-message');
+            const errorState = document.getElementById('error-state');
+            const errorMessage = document.getElementById('error-message');
+            const emptyState = document.getElementById('empty-state');
+            
+            const dadosGeraisContainer = document.getElementById('dados-gerais-container');
+            const acpSelectorWrapper = document.getElementById('acp-selector-wrapper');
+            const acpSelector = document.getElementById('acp-selector');
+            const resultadoTotalContainer = document.getElementById('resultado-total');
+            const planosContainer = document.getElementById('planos-container');
+            const relatorioContainer = document.getElementById('relatorio-container');
+            
+            const totalTemplate = document.getElementById('total-template');
+            const planoTemplate = document.getElementById('plano-template');
+            const alertaCaixaTemplate = document.getElementById('alerta-caixa-template');
+            const relatorioTemplate = document.getElementById('relatorio-template');
+
+            // Elementos da Nova Secção de Verificação
+            const btnLoadCsv = document.getElementById('btn-load-csv');
+            const csvUpload = document.getElementById('csv-upload');
+            const csvStatus = document.getElementById('csv-status');
+            let btnSearchLegalOne, inputCpf, btnCheckReceita, selectStatusCliente;
+            let inputNascimento, inputTelefone, inputTipoCliente; // Novos campos
+
+            // Variáveis de Estado
+            let fileData = {
+                base64Images: null,
+                mimeType: null
+            };
+            
+            let currentJsonData = null;
+            let currentCalculoData = null;
+            let clienteDB = null; // Armazena a base de clientes em memória
+            let clienteDBNomeColuna = null;
+            let clienteDBCPFColuna = null;
+            let clienteDBNascimentoColuna = null;
+            let clienteDBTelefoneColuna = null;
+            let clienteDBTipoColuna = null;
+
+
+            // Regras de Negócio
+            const aditivosACP = {
+                "itau": [
+                    { value: "itau-banestado", text: "Itaú (Banestado - ACP 0700584-33...)" }
+                ],
+                "banco do brasil": [
+                    { value: "bb-acp-0403", text: "BB (ACP 0403263-60...)" },
+                    { value: "bb-acp-0027", text: "BB (ACP 0027179-08...)" }
+                ],
+                "caixa": [
+                    { value: "caixa-projust", text: "CAIXA (PROJUST - ACP 0004511-21...)" }
+                ]
+            };
+
+            // "banco de dados"
+            btnLoadCsv.addEventListener('click', () => csvUpload.click());
+            csvUpload.addEventListener('change', (e) => handleCsvFile(e.target.files[0]));
+
+            dropzone.addEventListener('click', () => fileUpload.click());
+            fileUpload.addEventListener('change', (e) => handleFile(e.target.files[0]));
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.add('dragover'), false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.remove('dragover'), false);
+            });
+            
+            dropzone.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]), false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Processar o CSV ou XLSX
+            function handleCsvFile(file) {
+                if (!file) return;
+
+                csvStatus.textContent = 'A carregar base de clientes...';
+                csvStatus.className = 'font-medium text-yellow-600';
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = event.target.result;
+                        let rowsAsObjects;
+
+                        if (file.name.endsWith('.csv')) {
+                            // É um CSV, usa PapaParse
+                            const result = Papa.parse(data, {
+                                header: true,
+                                skipEmptyLines: true,
+                                transformHeader: header => header.trim() // Limpa espaços
+                            });
+                            rowsAsObjects = result.data;
+                        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                            // É um Excel, usa SheetJS
+                            const workbook = XLSX.read(data, { type: 'binary' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            rowsAsObjects = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lê como array
+                            
+                            // Converte array de arrays para array de objetos
+                            if (rowsAsObjects.length > 0) {
+                                const headers = rowsAsObjects[0].map(h => String(h).trim());
+                                const dataRows = rowsAsObjects.slice(1);
+                                rowsAsObjects = dataRows.map(rowArray => {
+                                    let obj = {};
+                                    headers.forEach((header, index) => {
+                                        obj[header] = rowArray[index];
+                                    });
+                                    return obj;
+                                });
+                            }
+                        } else {
+                            throw new Error("Formato de ficheiro não suportado. Use .csv ou .xlsx");
+                        }
+
+                        // processa os objetos
+                        processarDadosDeClientes(rowsAsObjects);
+
+                    } catch (err) {
+                        csvStatus.textContent = 'Erro ao ler o ficheiro.';
+                        csvStatus.className = 'font-medium text-red-600';
+                        console.error("Erro ao processar ficheiro:", err);
+                        clienteDB = null;
+                    }
+                };
+
+                reader.onerror = (err) => {
+                    csvStatus.textContent = 'Erro ao ler o ficheiro.';
+                    csvStatus.className = 'font-medium text-red-600';
+                    console.error("Erro FileReader:", err);
+                    clienteDB = null;
+                };
+
+                if (file.name.endsWith('.csv')) {
+                    reader.readAsText(file); // PapaParse lê texto
+                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    reader.readAsBinaryString(file); // SheetJS lê binário
+                }
+            }
+            
+            
+            function processarDadosDeClientes(rowsAsObjects) {
+                if (!rowsAsObjects || rowsAsObjects.length === 0) {
+                    throw new Error("Ficheiro vazio ou mal formatado.");
+                }
+                
+                const headers = Object.keys(rowsAsObjects[0]);
+                
+                
+                const colunasNomePossiveis = ['nome / razão social', 'nome', 'razão social', 'cliente'];
+                const colunasCPFPossiveis = ['cpf/cnpj', 'cpf', 'cnpj', 'documento'];
+                const colunasNascimentoPossiveis = ['data de nascimento', 'nascimento', 'dt. nasc.', 'dt nascimento'];
+                const colunasTelefonePossiveis = ['telefone', 'fone', 'tel.'];
+                const colunasTipoPossiveis = ['tipo', 'tipo de pessoa', 'pessoa'];
+                
+                clienteDBNomeColuna = headers.find(h => colunasNomePossiveis.includes(h.toLowerCase().trim()));
+                clienteDBCPFColuna = headers.find(h => colunasCPFPossiveis.includes(h.toLowerCase().trim()));
+                clienteDBNascimentoColuna = headers.find(h => colunasNascimentoPossiveis.includes(h.toLowerCase().trim()));
+                clienteDBTelefoneColuna = headers.find(h => colunasTelefonePossiveis.includes(h.toLowerCase().trim()));
+                clienteDBTipoColuna = headers.find(h => colunasTipoPossiveis.includes(h.toLowerCase().trim()));
+
+                if (!clienteDBNomeColuna || !clienteDBCPFColuna) {
+                    csvStatus.textContent = 'Erro: Colunas "Nome" ou "CPF" não encontradas.';
+                    csvStatus.className = 'font-medium text-red-600';
+                    console.error(`Colunas encontradas: [${headers.join(', ')}]`);
+                    console.error(`Coluna de Nome procurada e não encontrada. (Procurou por: ${colunasNomePossiveis.join(', ')})`);
+                    console.error(`Coluna de CPF procurada e não encontrada. (Procurou por: ${colunasCPFPossiveis.join(', ')})`);
+                    clienteDB = null;
+                    return;
+                }
+                
+                /
+                clienteDB = {};
+                rowsAsObjects.forEach(row => {
+                    const nome = row[clienteDBNomeColuna]?.trim().toUpperCase();
+                    const cpf = String(row[clienteDBCPFColuna] || '').trim();
+                    const nascimento = row[clienteDBNascimentoColuna] || '';
+                    const telefone = String(row[clienteDBTelefoneColuna] || '').trim();
+                    const tipo = row[clienteDBTipoColuna] || '';
+
+                    if (nome && cpf) {
+                        clienteDB[nome] = { cpf, nascimento, telefone, tipo };
+                    }
+                });
+                
+                const count = Object.keys(clienteDB).length;
+                if (count > 0) {
+                    csvStatus.textContent = `Base carregada! (${count} registos encontrados)`;
+                    csvStatus.className = 'font-medium text-green-600';
+                    console.log(`Base de Clientes carregada (Nome: '${clienteDBNomeColuna}', CPF: '${clienteDBCPFColuna}', Nasc: '${clienteDBNascimentoColuna}', Tel: '${clienteDBTelefoneColuna}', Tipo: '${clienteDBTipoColuna}')`);
+                } else {
+                     throw new Error("Colunas encontradas, mas nenhum dado processado.");
+                }
+            }
+
+
+            async function handleFile(file) {
+                if (!file) return;
+
+                fileNameDisplay.textContent = file.name;
+                btnAnalisar.disabled = true;
+                setLoading(true, "A processar o ficheiro...");
+
+                try {
+                    if (file.type === 'application/pdf') {
+                        setLoading(true, "A converter PDF para imagens PNG...");
+                        const fileDataArrayBuffer = await file.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({ data: fileDataArrayBuffer }).promise;
+                        const { base64Images, mimeType } = await convertPdfToImages(pdf);
+                        fileData = {
+                            base64Images: base64Images,
+                            mimeType: mimeType
+                        };
+
+                    } else if (file.type.startsWith('image/')) {
+                        setLoading(true, "A converter imagem...");
+                        const { base64, mimeType } = await convertImageToBase64(file);
+                        fileData = {
+                            base64Images: [base64],
+                            mimeType: mimeType
+                        };
+                    } else {
+                        throw new Error('Tipo de ficheiro não suportado. Envie PDF ou Imagem.');
+                    }
+                    
+                    btnAnalisar.disabled = false;
+                    setError(false);
+                } catch (error) {
+                    console.error('Erro ao processar ficheiro:', error);
+                    setError(true, error.message);
+                    fileData = { base64Images: null, mimeType: null };
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            
+            
+            async function convertPdfToImages(pdf) {
+                const base64Images = [];
+                const canvas = document.getElementById('pdf-canvas');
+                const context = canvas.getContext('2d');
+                const scale = 1.5;
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: scale });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    const dataUrl = canvas.toDataURL('image/png');
+                    base64Images.push(dataUrl.split(',')[1]);
+                }
+                
+                return { base64Images, mimeType: 'image/png' };
+            }
+
+            function convertImageToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1];
+                        resolve({ base64, mimeType: file.type });
+                    };
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+
+        
+
+            btnAnalisar.addEventListener('click', () => {
+                callGeminiAPI(fileData.base64Images, fileData.mimeType);
+            });
+            
+            async function callGeminiAPI(base64ImageArray, mimeType) {
+                setLoading(true, "A analisar com IA...");
+                setError(false);
+                clearResults();
+
+              
+                const apiKey = "AIzaSyD-msswYAReMXpObiN8KVb7AyBATbc2pIw"; //
+
+                
+                if (apiKey === "" || apiKey.length < 30) {
+                    setError(true, "ERRO DE CONFIGURAÇÃO: A 'apiKey' está em falta ou é inválida. Por favor, cole a sua chave de API do Google AI Studio no ficheiro .html (linha ~617).");
+                    setLoading(false);
+                    return;
+                }
+
+                const apiUrl = "/api/analisar";
+                
+                const systemPrompt = `Você é um assistente de advocacia especialista em expurgos inflacionários (Planos Bresser, Verão, Collor I, Collor II).
+Sua tarefa é analisar a(s) IMAGEM(NS) de um extrato de poupança antigo (via OCR) e extrair dados-chave para um formato JSON.
+É crucial que você associe *corretamente* cada plano à sua respectiva agência e conta.
+EXTRAIA O NOME DO TITULAR EXATAMENTE COMO APARECE, EM MAIÚSCULAS.
+
+Regras de Leitura Específicas:
+1.  **Plano Bresser (Jun/1987):**
+    * O saldo correto é o "SALDO ATUAL" que aparece no extrato de Junho/1987 (que inclui a correção do período).
+    * No extrato "PLAUDEZIR FELISBERTO DE ABREU", o saldo base correto é 27.146,51.
+2.  **Plano Verão (Jan/1989):**
+    * Saldo correto: "SDO. ANTERIOR" de Jan/89 (ou Saldo Final de Dez/88), ANTES da correção de Fev/89.
+    * Atenção à conversão de moeda (Cz$ para NCz$, corte de 3 zeros). O saldo deve ser em NCz$ (Ex: Cz$ 230.320,00 vira 230,32).
+    * "Dia Base" é o dia do crédito em Jan/89.
+3.  **Plano Collor II (Jan/1991):**
+    * Saldo correto: "SDO. ANTERIOR" de Jan/91 (ou Saldo Final de Dez/90).
+    * Exceção (Caso Eliete da Silva): Se o saldo anterior for zero, mas houver um depósito no "Dia Base" em Jan/91 (ex: "210191 21 DEP. DINHEIRO 80.000,00"), use o valor desse primeiro depósito como saldo base.
+    * Exclusão (Caso Fabio/Adilson): Preste atenção se o "Dia Base" é 01 ou 02.
+4.  **Geral:**
+    * Se o saldo for "0,00", extraia "0,00".
+    * Ignore planos onde o saldo é "Não Identificado".
+
+Formato da Resposta:
+Responda *apenas* com um objeto JSON válido, seguindo este formato exato:
+{
+  "titular": "...",
+  "banco": "...",
+  "planos": [
+    { "nomePlano": "...", "agencia": "...", "conta": "...", "saldoExtrato": "...", "dataBaseAniversario": "..." }
+  ]
+}
+
+Se um campo não for encontrado, retorne "Não Identificado".`;
+                
+                const userPrompt = "Analise esta(s) IMAGEM(NS) de extrato e retorne o JSON com os dados, conforme suas instruções.";
+                const contentParts = [];
+
+                if (base64ImageArray && base64ImageArray.length > 0) {
+                    contentParts.push({ text: userPrompt });
+                    base64ImageArray.forEach(base64Image => {
+                        contentParts.push({
+                            inlineData: {
+                                mimeType: mimeType, // 'image/png'
+                                data: base64Image
+                            }
+                        });
+                    });
+                } else {
+                    setError(true, "Nenhum dado de ficheiro para analisar.");
+                    setLoading(false);
+                    return;
+                }
+
+                const payload = {
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                    contents: [
+                        {
+                            role: "user",
+                            parts: contentParts
+                        }
+                    ],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        temperature: 0.0,
+                    }
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.json();
+                        throw new Error(`Erro HTTP da API: ${errorBody.error?.message || response.statusText}`);
+                    }
+
+                    const result = await response.json();
+
+                    console.log("Resposta completa da API Gemini:", JSON.stringify(result, null, 2));
+
+                    const candidate = result.candidates?.[0];
+                    
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const jsonText = candidate.content.parts[0].text;
+                        const data = JSON.parse(jsonText);
+                        
+                        if (data.erro) {
+                            throw new Error(data.erro);
+                        }
+                        
+                        currentJsonData = data;
+                        displayResults(data);
+                    } else {
+                        const blockReason = result.promptFeedback?.blockReason;
+                        if (blockReason) {
+                            throw new Error(`A API bloqueou o pedido. Motivo: ${blockReason}`);
+                        }
+                        
+                        // Mensagem de erro de depuração melhorada
+                        const errorContent = JSON.stringify(result.promptFeedback || result, null, 2);
+                        const erro = `A IA não retornou 'candidates' (conteúdo). Resposta da API: ${errorContent}`;
+                        throw new Error(erro);
+                    }
+
+                } catch (error) {
+                    console.error('Falha ao chamar API Gemini:', error);
+                    setError(true, `Falha na análise da IA: ${error.message}.`);
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            // --- Funções de Conversão Auxiliares ---
+
+            function parseSaldo(saldoString) {
+                if (!saldoString || typeof saldoString !== 'string') {
+                    return 0;
+                }
+                const numeroLimpo = saldoString
+                    .replace(/\./g, '')
+                    .replace(/,/g, '.');
+                
+                const valor = parseFloat(numeroLimpo);
+                return isNaN(valor) ? 0 : valor;
+            }
+
+            function formatCurrency(valor) {
+                return valor.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+            }
+
+            // --- Motor de Regras ---
+            function checkEligibility(plano, tipoCalculo) {
+                const diaBase = parseInt(plano.dataBaseAniversario, 10);
+                const nomePlano = (plano.nomePlano || "").toLowerCase();
+                const saldoNumerico = parseSaldo(plano.saldoExtrato);
+                
+                let fator = 0.0;
+                let status = 'alerta';
+                let texto = 'Regra não aplicável';
+                let aplicarDesconto = true;
+                let dataReferencia = 'N/A'; // Nova variável
+
+                if (isNaN(diaBase)) {
+                    return { status: 'alerta', texto: 'IA não identificou o "Dia Base"', valorBase: 0, aplicarDesconto: false, dataReferencia };
+                }
+
+                if (saldoNumerico === 0) {
+                     return { status: 'erro', texto: 'Saldo zerado no período', valorBase: 0, aplicarDesconto: false, dataReferencia };
+                }
+                
+                if (nomePlano.includes('verão')) {
+                    dataReferencia = '31/01/1989';
+                    if (tipoCalculo === 'itau-banestado') {
+                        fator = 12.85145;
+                        status = 'sucesso';
+                        texto = `Elegível (ACP Itaú-Banestado)`;
+                        aplicarDesconto = false;
+                    }
+                    else if (tipoCalculo === 'bb-acp-0403') {
+                        fator = 13.33641;
+                        status = 'sucesso';
+                        texto = `Elegível (ACP BB 0403...)`;
+                        aplicarDesconto = true;
+                    }
+                    else if (tipoCalculo === 'bb-acp-0027') {
+                        fator = 5.21333;
+                        status = 'sucesso';
+                        texto = `Elegível (ACP BB 0027...)`;
+                        aplicarDesconto = true;
+                    }
+                    else if (tipoCalculo === 'caixa-projust') {
+                        return { status: 'info', texto: 'Ver Regra (ACP CAIXA-PROJUST)', valorBase: 0, aplicarDesconto: false, casoEspecial: 'caixa-projust', dataReferencia };
+                    }
+                }
+
+                if (fator === 0.0) {
+                    if (nomePlano.includes('bresser')) {
+                        dataReferencia = '30/06/1987';
+                        if (diaBase >= 1 && diaBase <= 15) {
+                            fator = 0.05185;
+                            status = 'sucesso';
+                            texto = `Elegível (Base ${diaBase} está entre 1-15)`;
+                        } else {
+                            status = 'erro';
+                            texto = `Não Elegível (Base ${diaBase} fora de 1-15)`; 
+                        }
+                    } else if (nomePlano.includes('verão')) {
+                        dataReferencia = '31/01/1989';
+                        if (diaBase >= 1 && diaBase <= 15) {
+                            fator = 4.96864;
+                            status = 'sucesso';
+                            texto = `Elegível (Base ${diaBase} está entre 1-15)`;
+                        } else {
+                            status = 'erro';
+                            texto = `Não Elegível (Base ${diaBase} fora de 1-15)`;
+                        }
+                    } else if (nomePlano.includes('collor ii')) {
+                        dataReferencia = '31/01/1991';
+                        if (diaBase >= 3 && diaBase <= 31) {
+                            fator = 0.00170;
+                            status = 'sucesso';
+                            texto = `Elegível (Base ${diaBase} está entre 3-31)`;
+                        } else {
+                            status = 'erro';
+                            texto = `Não Elegível (Base ${diaBase} é 1 ou 2)`;
+                        }
+                    } else if (nomePlano.includes('collor i')) {
+                        dataReferencia = 'N/A';
+                        status = 'erro';
+                        texto = 'NÃO TRABALHAMOS (PLANO COLLOR I)';
+                    } else {
+                        status = 'alerta';
+                        texto = 'Plano não reconhecido';
+                    }
+                }
+
+                const valorBase = saldoNumerico * fator;
+                return { status, texto, valorBase, aplicarDesconto, dataReferencia };
+            }
+
+            function calcularFaixaDesconto(valorConsolidado) {
+                if (valorConsolidado <= 5000) {
+                    return { percentual: 0, faixa: "Até R$ 5.000,00" };
+                } else if (valorConsolidado <= 10000) {
+                    return { percentual: 0.08, faixa: "R$ 5.000,01 a R$ 10.000,00" };
+                } else if (valorConsolidado <= 20000) {
+                    return { percentual: 0.14, faixa: "R$ 10.000,01 a R$ 20.000,00" };
+                } else {
+                    return { percentual: 0.19, faixa: "Acima de R$ 20.000,00" };
+                }
+            }
+
+            // Geração do Relatório agora inclui todos os campos
+            function gerarTextoRelatorio(data, calculo) {
+                const cpf = document.getElementById('input-cpf').value || "Não informado";
+                const nascimento = document.getElementById('input-nascimento').value || "Não informada";
+                const telefone = document.getElementById('input-telefone').value || "Não informado";
+                const tipoCliente = document.getElementById('input-tipo-cliente').value || "Não informado";
+                const statusSelect = document.getElementById('select-status-cliente');
+                const statusCliente = statusSelect.options[statusSelect.selectedIndex].text;
+
+                let texto = `*** ANÁLISE DE EXPURGOS (VERIFIQUE COM ATENÇÃO!!!, VERIFIQUE SE O VALOR QUE A IA UTILIZOU COMO BASE PARA OS CALCULOS ESTA CERTO. ***\n`;
+                texto += `TITULAR: ${data.titular}\n`;
+                texto += `CPF: ${cpf}\n`;
+                texto += `DATA NASC.: ${nascimento}\n`;
+                texto += `TELEFONE: ${telefone}\n`;
+                texto += `TIPO CLIENTE: ${tipoCliente}\n`;
+                texto += `STATUS TITULAR: ${statusCliente}\n`;
+                texto += `BANCO: ${data.banco}\n`;
+                texto += `TIPO DE CÁLCULO: ${calculo.tipo}\n\n`;
+                texto += `--- DETALHAMENTO DOS PLANOS ---\n`;
+
+                data.planos.forEach(plano => {
+                    const elegibilidade = checkEligibility(plano, calculo.tipo);
+                    
+                    let agenciaLimpa = plano.agencia || 'N/I';
+                    if (agenciaLimpa.includes('-')) agenciaLimpa = agenciaLimpa.substring(0, agenciaLimpa.lastIndexOf('-'));
+                    let contaLimpa = plano.conta || 'N/I';
+                    if (contaLimpa.includes('-')) contaLimpa = contaLimpa.substring(0, contaLimpa.lastIndexOf('-'));
+                    
+                    texto += `\nPlano: ${plano.nomePlano} (AG: ${agenciaLimpa} / CC: ${contaLimpa})\n`;
+                    
+                    if (elegibilidade.casoEspecial === 'caixa-projust') {
+                        texto += `  - STATUS: ANÁLISE MANUAL REQUERIDA (ACP PROJUST)\n`;
+                        return;
+                    }
+                    
+                    texto += `  - Data de Referência: ${elegibilidade.dataReferencia}\n`;
+                    texto += `  - Saldo Base (OCR): ${plano.saldoExtrato}\n`;
+                    texto += `  - Dia Base: ${plano.dataBaseAniversario}\n`;
+                    texto += `  - Valor Base (Calculado): ${formatCurrency(elegibilidade.valorBase)}\n`;
+                    texto += `  - STATUS: ${elegibilidade.texto}\n`;
+                });
+
+                texto += `\n--- RESULTADO CONSOLIDADO ---\n`;
+                texto += `VALOR BASE TOTAL (SOMA): ${formatCurrency(calculo.valorConsolidado)}\n`;
+                texto += `FAIXA DE DESCONTO: ${calculo.desconto.faixa}\n`;
+                texto += `DESCONTO (${(calculo.desconto.percentual * 100).toFixed(0)}%): -${formatCurrency(calculo.valorDesconto)}\n`;
+                texto += `VALOR LÍQUIDO ESTIMADO: ${formatCurrency(calculo.valorLiquido)}\n`;
+
+                return texto;
+            }
+
+
+            // --- Funções de UI (Display) ---
+
+            function setLoading(isLoading, message = "") {
+                if (isLoading) {
+                    loadingMessage.textContent = message;
+                    loadingState.classList.remove('hidden');
+                    loadingState.classList.add('flex');
+                    emptyState.classList.add('hidden');
+                    clearResults();
+                } else {
+                    loadingState.classList.add('hidden');
+                    loadingState.classList.remove('flex');
+                }
+            }
+
+            function setError(isError, message = "") {
+                if (isError) {
+                    errorMessage.textContent = message;
+                    errorState.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+                    clearResults();
+                } else {
+                    errorState.classList.add('hidden');
+                }
+            }
+
+            function clearResults() {
+                dadosGeraisContainer.classList.add('hidden');
+                acpSelectorWrapper.classList.add('hidden');
+                resultadoTotalContainer.innerHTML = '';
+                planosContainer.innerHTML = '';
+                relatorioContainer.innerHTML = '';
+                relatorioContainer.classList.add('hidden');
+
+                // Reseta os campos de verificação
+                if(inputCpf) inputCpf.value = '';
+                if(inputNascimento) inputNascimento.value = '';
+                if(inputTelefone) inputTelefone.value = '';
+                if(inputTipoCliente) inputTipoCliente.value = '';
+
+                if(inputCpf) inputCpf.classList.remove('border-green-500');
+                if(inputNascimento) inputNascimento.classList.remove('border-green-500');
+                if(inputTelefone) inputTelefone.classList.remove('border-green-500');
+                if(inputTipoCliente) inputTipoCliente.classList.remove('border-green-500');
+                
+                if(inputCpf) inputCpf.placeholder = 'Carregue o CSV no Passo 0.';
+                if(inputNascimento) inputNascimento.placeholder = 'Carregue o CSV no Passo 0.';
+                if(inputTelefone) inputTelefone.placeholder = 'Carregue o CSV no Passo 0.';
+                if(inputTipoCliente) inputTipoCliente.placeholder = 'Carregue o CSV no Passo 0.';
+
+
+                if(btnCheckReceita) btnCheckReceita.disabled = true;
+                if(selectStatusCliente) selectStatusCliente.value = 'Pendente';
+            }
+
+            function setupACPOptions(bancoDetectado) {
+                const banco = (bancoDetectado || "").toLowerCase().trim();
+                let options = [];
+
+                if (banco.includes('itau')) {
+                    options = aditivosACP.itau;
+                } else if (banco.includes('banco do brasil')) {
+                    options = aditivosACP['banco do brasil'];
+                } else if (banco.includes('caixa')) {
+                    options = aditivosACP.caixa;
+                }
+
+                acpSelector.options.length = 1; 
+
+                if (options.length > 0) {
+                    options.forEach(opt => {
+                        acpSelector.add(new Option(opt.text, opt.value));
+                    });
+                    acpSelectorWrapper.classList.remove('hidden');
+                } else {
+                    acpSelectorWrapper.classList.add('hidden');
+                }
+            }
+
+            // Função de Display principal, agora configura os novos campos
+            function displayResults(data) {
+                clearResults();
+                emptyState.classList.add('hidden');
+
+                const titularNome = data.titular || 'Não Identificado';
+                dadosGeraisContainer.querySelector('.data-titular').textContent = titularNome;
+                dadosGeraisContainer.querySelector('.data-banco').textContent = data.banco || 'Não Identificado';
+                dadosGeraisContainer.classList.remove('hidden');
+                
+                setupACPOptions(data.banco);
+                
+                // Pega os elementos de verificação manual
+                btnSearchLegalOne = document.getElementById('btn-search-legalone');
+                inputCpf = document.getElementById('input-cpf');
+                inputNascimento = document.getElementById('input-nascimento');
+                inputTelefone = document.getElementById('input-telefone');
+                inputTipoCliente = document.getElementById('input-tipo-cliente');
+                btnCheckReceita = document.getElementById('btn-check-receita');
+                selectStatusCliente = document.getElementById('select-status-cliente');
+
+                // --- LÓGICA DE BUSCA DE CPF ---
+                if (clienteDB && titularNome !== 'Não Identificado') {
+                    const dadosCliente = clienteDB[titularNome.toUpperCase()];
+                    if (dadosCliente) {
+                        inputCpf.value = dadosCliente.cpf;
+                        inputNascimento.value = dadosCliente.nascimento || '';
+                        inputTelefone.value = dadosCliente.telefone || '';
+                        inputTipoCliente.value = dadosCliente.tipo || '';
+                        
+                        // Destaca campos encontrados
+                        inputCpf.classList.add('border-green-500');
+                        if(dadosCliente.nascimento) inputNascimento.classList.add('border-green-500');
+                        if(dadosCliente.telefone) inputTelefone.classList.add('border-green-500');
+                        if(dadosCliente.tipo) inputTipoCliente.classList.add('border-green-500');
+                        
+                        btnCheckReceita.disabled = false;
+                    } else {
+                        const placeholder = 'Titular não encontrado na base CSV.';
+                        inputCpf.placeholder = placeholder;
+                        inputNascimento.placeholder = placeholder;
+                        inputTelefone.placeholder = placeholder;
+                        inputTipoCliente.placeholder = placeholder;
+                        btnCheckReceita.disabled = true;
+                    }
+                } else if (clienteDB) {
+                    const placeholder = 'IA não identificou o titular.';
+                    inputCpf.placeholder = placeholder;
+                    inputNascimento.placeholder = placeholder;
+                    inputTelefone.placeholder = placeholder;
+                    inputTipoCliente.placeholder = placeholder;
+                }
+                // --- FIM DA LÓGICA DE BUSCA ---
+
+
+                btnSearchLegalOne.onclick = () => {
+                    if (titularNome && titularNome !== 'Não Identificado') {
+                        const url = `https://app.legalone.com.br/search?q=${encodeURIComponent(titularNome)}`;
+                        window.open(url, '_blank');
+                    }
+                };
+
+                btnCheckReceita.onclick = () => {
+                    const url = 'https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/ConsultaPublica.asp';
+                    window.open(url, '_blank');
+                };
+                
+                // Ativa o botão da receita se o usuário digitar o CPF manually
+                inputCpf.oninput = () => {
+                    btnCheckReceita.disabled = inputCpf.value.length < 11;
+                    gerarRelatorioCompleto(data, acpSelector.value, acpSelector.options[acpSelector.selectedIndex].text);
+                };
+
+                // Qualquer mudança nos campos de verificação regera o relatório
+                acpSelector.onchange = () => gerarRelatorioCompleto(data, acpSelector.value, acpSelector.options[acpSelector.selectedIndex].text);
+                selectStatusCliente.onchange = () => gerarRelatorioCompleto(data, acpSelector.value, acpSelector.options[acpSelector.selectedIndex].text);
+
+                gerarRelatorioCompleto(data, acpSelector.value, acpSelector.options[acpSelector.selectedIndex].text);
+            }
+            
+            function gerarRelatorioCompleto(data, tipoCalculo, tipoCalculoTexto) {
+                resultadoTotalContainer.innerHTML = '';
+                planosContainer.innerHTML = '';
+                relatorioContainer.innerHTML = '';
+                relatorioContainer.classList.add('hidden');
+
+                let valorConsolidado = 0;
+                let aplicaDescontoConsolidado = false;
+                
+                if (data.planos && data.planos.length > 0) {
+                    data.planos.forEach(plano => {
+                        
+                        const elegibilidade = checkEligibility(plano, tipoCalculo);
+
+                        if (elegibilidade.casoEspecial === 'caixa-projust') {
+                            const card = alertaCaixaTemplate.content.cloneNode(true).firstElementChild;
+                            planosContainer.appendChild(card);
+                            return;
+                        }
+                        
+                        const card = planoTemplate.content.cloneNode(true).firstElementChild;
+                        card.querySelector('.data-plano-nome').textContent = plano.nomePlano || 'Plano Não Identificado';
+                        
+                        let agenciaLimpa = plano.agencia || 'Não Identificado';
+                        let contaLimpa = plano.conta || 'Não Identificado';
+
+                        if (agenciaLimpa.includes('-')) {
+                            agenciaLimpa = agenciaLimpa.substring(0, agenciaLimpa.lastIndexOf('-'));
+                        }
+                        if (contaLimpa.includes('-')) {
+                            contaLimpa = contaLimpa.substring(0, contaLimpa.lastIndexOf('-'));
+                        }
+                        
+                        card.querySelector('.data-plano-agencia').textContent = agenciaLimpa;
+                        card.querySelector('.data-plano-conta').textContent = contaLimpa;
+                        
+                        // Preenche a nova Data de Referência
+                        card.querySelector('.data-plano-referencia').textContent = elegibilidade.dataReferencia;
+                        card.querySelector('.data-plano-saldo').textContent = plano.saldoExtrato || 'Não Identificado';
+                        card.querySelector('.data-plano-aniversario').textContent = plano.dataBaseAniversario || 'Não Identificado';
+
+                        const statusBadge = card.querySelector('.data-plano-status');
+                        statusBadge.textContent = elegibilidade.texto;
+                        statusBadge.classList.remove('status-alerta');
+                        statusBadge.classList.add(`status-${elegibilidade.status}`);
+
+                        const valorBaseElement = card.querySelector('.data-plano-valorbase');
+                        valorBaseElement.textContent = formatCurrency(elegibilidade.valorBase);
+                        
+                        if (elegibilidade.valorBase === 0 || elegibilidade.status === 'erro') {
+                            valorBaseElement.classList.remove('text-green-700');
+                            valorBaseElement.classList.add('text-red-700');
+                        }
+
+                        if (elegibilidade.status === 'sucesso' && elegibilidade.valorBase > 0) {
+                            valorConsolidado += elegibilidade.valorBase;
+                            if (elegibilidade.aplicarDesconto) {
+                                aplicaDescontoConsolidado = true;
+                            }
+                        }
+
+                        addCopyListeners(card);
+                        planosContainer.appendChild(card);
+                    });
+                } else {
+                    planosContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum plano económico específico foi identificado pela IA neste extrato.</p>';
+                }
+                
+                let calculoFinal = {};
+                if (valorConsolidado > 0) {
+                    const card = totalTemplate.content.cloneNode(true).firstElementChild;
+                    let descontoInfo = { percentual: 0, faixa: "Sem desconto" };
+                    let valorDesconto = 0;
+
+                    if (aplicaDescontoConsolidado) {
+                        descontoInfo = calcularFaixaDesconto(valorConsolidado);
+                        valorDesconto = valorConsolidado * descontoInfo.percentual;
+                    } else {
+                        descontoInfo.faixa = "Desconto não aplicado (Regra ACP)";
+                    }
+                    
+                    const valorLiquido = valorConsolidado - valorDesconto;
+
+                    card.querySelector('.data-total-bruto').textContent = formatCurrency(valorConsolidado);
+                    card.querySelector('.data-total-faixa').textContent = descontoInfo.faixa;
+                    card.querySelector('.data-total-desconto').textContent = `- ${formatCurrency(valorDesconto)}`;
+                    card.querySelector('.data-total-liquido').textContent = formatCurrency(valorLiquido);
+
+                    resultadoTotalContainer.appendChild(card);
+                    
+                    calculoFinal = {
+                        valorConsolidado,
+                        desconto: descontoInfo,
+                        valorDesconto,
+                        valorLiquido,
+                        tipo: tipoCalculoTexto
+                    };
+                } else {
+                     calculoFinal = {
+                        valorConsolidado: 0,
+                        desconto: { percentual: 0, faixa: "N/A" },
+                        valorDesconto: 0,
+                        valorLiquido: 0,
+                        tipo: tipoCalculoTexto
+                    };
+                }
+                
+                // Gera o Relatório Visual
+                const cardRelatorio = relatorioTemplate.content.cloneNode(true).firstElementChild;
+                const textoRelatorio = gerarTextoRelatorio(data, calculoFinal);
+                
+                const reportTextElement = cardRelatorio.querySelector('#relatorio-texto');
+                reportTextElement.innerText = textoRelatorio; // Usa innerText para renderizar quebras de linha
+
+                const btnCopyRelatorio = cardRelatorio.querySelector('#btn-copy-relatorio');
+                const feedbackRelatorio = cardRelatorio.querySelector('#relatorio-feedback');
+                
+                btnCopyRelatorio.addEventListener('click', () => {
+                    copyToClipboard(textoRelatorio, btnCopyRelatorio, feedbackRelatorio);
+                });
+                
+                relatorioContainer.appendChild(cardRelatorio);
+                relatorioContainer.classList.remove('hidden');
+            }
+            
+            function addCopyListeners(containerElement) {
+                containerElement.querySelectorAll('.btn-copy').forEach(button => {
+                    const newButton = button.cloneNode(true);
+                    button.parentNode.replaceChild(newButton, button);
+
+                    newButton.addEventListener('click', () => {
+                        const targetClass = newButton.getAttribute('data-copy-target');
+                        let textToCopy = newButton.closest('.copy-wrapper').querySelector(`.${targetClass}`).textContent;
+                        
+                        if (targetClass === 'data-plano-agencia' || targetClass === 'data-plano-conta') {
+                            const card = newButton.closest('.plano-card');
+                            const planoNome = card.querySelector('.data-plano-nome').textContent;
+                            const contaExibida = newButton.closest('.copy-wrapper').querySelector(`.${targetClass}`).textContent;
+                            
+                            const plano = currentJsonData.planos.find(p => 
+                                p.nomePlano === planoNome && 
+                                (p.conta || '').startsWith(contaExibida) 
+                            );
+                            
+                            if (plano) {
+                                textToCopy = (targetClass === 'data-plano-agencia') ? plano.agencia : plano.conta;
+                            }
+                        }
+                        
+                        copyToClipboard(textToCopy, newButton, newButton.nextElementSibling);
+                    });
+                });
+            }
+
+            function showCopyFeedback(feedbackElement) {
+                feedbackElement.classList.add('show');
+                setTimeout(() => {
+                    feedbackElement.classList.remove('show');
+                }, 1500);
+            }
+
+            function copyToClipboard(text, button, feedbackElement) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '0';
+                textArea.style.left = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyFeedback(feedbackElement);
+                } catch (err) {
+                    console.error('Falha ao copiar texto: ', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        });
+    </script>
+</body>
+</html>

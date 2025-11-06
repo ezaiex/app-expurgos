@@ -1,0 +1,12 @@
+{
+  "name": "expurgos-cloud",
+  "version": "1.0.0",
+  "description": "Analisador de Expurgos",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "latest"
+  }
+}
