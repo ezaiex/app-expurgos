@@ -1,11 +1,6 @@
-// Importa a biblioteca do Google
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Pega a chave de API (que vamos configurar no Vercel, no "cofre")
-const apiKey = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey);
-
-// O prompt do sistema fica aqui, seguro no backend
+// O prompt do sistema pode ficar aqui fora, é só texto
 const systemPrompt = `Você é um assistente de advocacia especialista em expurgos inflacionários (Planos Bresser, Verão, Collor I, Collor II).
 Sua tarefa é analisar a(s) IMAGEM(NS) de um extrato de poupança antigo (via OCR) e extrair dados-chave para um formato JSON.
 É crucial que você associe *corretamente* cada plano à sua respectiva agência e conta.
@@ -41,22 +36,44 @@ Se um campo não for encontrado, retorne "Não Identificado".`;
 
 // Esta é a função que o Vercel vai rodar
 export default async function handler(req, res) {
+    
+    // 1. Checa o método da requisição primeiro
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Método não permitido' });
     }
 
-    try {
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            systemInstruction: systemPrompt
-        });
+    // --- CORREÇÃO ---
+    // Movemos a inicialização da API para DENTRO da função
+    // para garantir que o "Cofre" (process.env) esteja pronto.
+    
+    // 2. Pega a chave de API (que o Vercel coloca aqui)
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    // 3. Validação da Chave
+    if (!apiKey) {
+        console.error("Erro: Chave de API (GEMINI_API_KEY) não encontrada.");
+        return res.status(500).json({ error: 'Configuração do servidor incompleta: Chave de API não encontrada.' });
+    }
 
+    // 4. Inicializa o Google AI
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // 5. Inicializa o Modelo
+    const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        systemInstruction: systemPrompt
+    });
+    // --- FIM DA CORREÇÃO ---
+
+    try {
+        // 6. Pega os dados que o HTML enviou
         const { base64ImageArray, mimeType } = req.body;
 
         if (!base64ImageArray || base64ImageArray.length === 0) {
             return res.status(400).json({ error: "Nenhuma imagem recebida." });
         }
 
+        // 7. Formata as imagens para a API
         const imageParts = base64ImageArray.map(base64Image => ({
             inlineData: {
                 mimeType: mimeType,
@@ -69,6 +86,7 @@ export default async function handler(req, res) {
             ...imageParts
         ];
 
+        // 8. Chama a API do Gemini
         const result = await model.generateContent({
             contents: [{ role: "user", parts: promptParts }],
             generationConfig: {
@@ -77,6 +95,7 @@ export default async function handler(req, res) {
             }
         });
 
+        // 9. Envia a resposta de volta para o HTML
         const response = result.response;
         const jsonText = response.text();
         res.status(200).json(JSON.parse(jsonText));
