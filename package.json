@@ -1,6 +1,7 @@
 {
   "name": "expurgos-cloud",
   "version": "1.0.0",
+  "type": "module",
   "description": "Analisador de Expurgos",
   "main": "index.js",
   "scripts": {
