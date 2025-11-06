@@ -50,12 +50,12 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // --- CORREÇÃO DO NOME DO MODELO ---
+    // --- ESTA É A COMBINAÇÃO CORRETA ---
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-1.5-flash-latest",
         systemInstruction: systemPrompt
     });
-    // --- FIM DA CORREÇÃO ---
+    // --- FIM DA MUDANÇA ---
 
     try {
         const { base64ImageArray, mimeType } = req.body;
