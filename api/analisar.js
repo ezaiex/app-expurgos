@@ -50,9 +50,9 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // --- CORREÇÃO FINAL DO NOME DO MODELO ---
+    // --- CORREÇÃO DO NOME DO MODELO ---
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-1.5-flash",
         systemInstruction: systemPrompt
     });
     // --- FIM DA CORREÇÃO ---
