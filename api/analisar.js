@@ -52,9 +52,9 @@ export default async function handler(req, res) {
     
     // --- ESTA É A COMBINAÇÃO CORRETA ---
     // API: "Gemini API" (que você ativou no Google)
-    // Modelo: "gemini-pro-vision" (que funciona com essa API)
+    // Modelo: "gemini-1.5-flash-latest" (que funciona com essa API)
     const model = genAI.getGenerativeModel({
-        model: "gemini-pro-vision",
+        model: "gemini-1.5-flash-latest",
         systemInstruction: systemPrompt
     });
     // --- FIM DA MUDANÇA ---
