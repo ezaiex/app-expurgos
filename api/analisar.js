@@ -1,5 +1,5 @@
 // Importa a biblioteca do Google
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Pega a chave de API (que vamos configurar no Vercel, no "cofre")
 const apiKey = process.env.GEMINI_API_KEY;
