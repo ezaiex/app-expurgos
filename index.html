@@ -7,16 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Biblioteca PDF.js (para LER o PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
-    <!-- Biblioteca Papa Parse (para LER o CSV) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- Biblioteca SheetJS (para LER o XLSX/Excel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
-    </script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
@@ -181,7 +174,6 @@
         </div>
 
 
-        <!-- PASSO 1: Enviar Extrato -->
         <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
             <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">2: Extrato de Poupança</h2>
             
@@ -202,7 +194,6 @@
             </div>
         </div>
 
-        <!-- PASSO 2: Resultados da IA -->
         <div id="output-area">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">3: Dados Extraídos (Double Check)</h2>
             
@@ -219,7 +210,6 @@
             <p id="empty-state" class="text-center text-gray-500 bg-white p-10 rounded-lg shadow-sm">Aguardando arquivo para análise.</p>
             
             <div id="dados-gerais-container" class="hidden bg-white p-5 rounded-lg shadow-md border border-gray-200 mb-4">
-                 <!-- Secção Titular e Banco -->
                  <div class="flex justify-between items-start">
                      <div>
                         <h3 class="text-xl font-semibold text-blue-700 mb-2 data-titular"></h3>
@@ -234,38 +224,31 @@
                      </button>
                  </div>
                  
-                 <!-- Secção: Verificação Manual -->
                  <div id="verificacao-manual-wrapper" class="pt-4 border-t border-gray-200">
                     <h4 class="text-sm font-semibold text-gray-700 mb-3">Verificação Manual do Cliente</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Campo CPF -->
                         <div>
                             <label for="input-cpf" class="block text-xs font-medium text-gray-600 mb-1">CPF do Titular</label>
                             <input type="text" id="input-cpf" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
                         </div>
-                        <!-- Campo Data de Nascimento -->
                         <div>
                             <label for="input-nascimento" class="block text-xs font-medium text-gray-600 mb-1">Data de Nascimento</label>
                             <input type="text" id="input-nascimento" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
                         </div>
-                        <!-- Botão Receita -->
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">&nbsp;</LabeL>
                             <button id="btn-check-receita" class="w-full btn-secundario text-sm py-1.5" disabled>
                                 Verificar na Receita Federal
                             </button>
                         </div>
-                        <!-- Campo Telefone -->
                         <div>
                             <label for="input-telefone" class="block text-xs font-medium text-gray-600 mb-1">Telefone</label>
                             <input type="text" id="input-telefone" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
                         </div>
-                         <!-- Campo Tipo de Cliente -->
-                        <div>
+                         <div>
                             <label for="input-tipo-cliente" class="block text-xs font-medium text-gray-600 mb-1">Tipo de Cliente</label>
                             <input type="text" id="input-tipo-cliente" class="w-full auto-field" placeholder="Carregue o CSV..." readonly>
                         </div>
-                        <!-- Status do Cliente -->
                         <div>
                             <label for="select-status-cliente" class="block text-xs font-medium text-gray-600 mb-1">Status do Cliente</label>
                             <select id="select-status-cliente" class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
@@ -278,7 +261,6 @@
                     </div>
                  </div>
 
-                 <!-- Secção: Aditivo ACP -->
                  <div id="acp-selector-wrapper" class="hidden pt-4 border-t border-gray-200 mt-4">
                     <label for="acp-selector" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Cálculo (Aditivo ACP)</label>
                     <select id="acp-selector" class="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
@@ -287,21 +269,17 @@
                  </div>
             </div>
 
-            <!-- Container: Totalizador -->
             <div id="resultado-total" class="mb-4">
             </div>
             
-            <!-- Container: Planos -->
             <div id="planos-container" class="space-y-4">
             </div>
 
-            <!-- Container: Relatório Visual -->
             <div id="relatorio-container" class="hidden mt-6">
             </div>
         </div>
     </div>
 
-    <!-- Template: Totalizador -->
     <template id="total-template">
         <div class="plano-card bg-blue-50 p-5 rounded-lg shadow-md border border-blue-200">
             <h3 class="text-xl font-semibold text-blue-800 mb-4">Resultado Consolidado</h3>
@@ -330,7 +308,6 @@
     </template>
 
 
-    <!-- Card de Plano -->
     <template id="plano-template">
         <div class="plano-card bg-white p-5 rounded-lg shadow-md border border-gray-200">
             <div class="flex justify-between items-start mb-3">
@@ -353,7 +330,6 @@
                 </div>
             </div>
             
-            <!-- grelha de 4 colunas -->
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-6 gap-y-4 pt-3 border-t border-gray-100">
                 <div class="relative copy-wrapper">
                     <span class="block text-xs font-medium text-gray-500">Data de Referência</span>
@@ -382,7 +358,6 @@
         </div>
     </template>
     
-    <!-- Alerta CAIXA -->
     <template id="alerta-caixa-template">
         <div class="plano-card bg-amber-50 p-5 rounded-lg shadow-md border border-amber-300">
             <h3 class="text-lg font-semibold text-amber-800">Plano Verão (CAIXA - ACP PROJUST)</h3>
@@ -399,7 +374,6 @@
         </div>
     </template>
 
-    <!-- Relatório Visual (substitui o <textarea>) -->
     <template id="relatorio-template">
         <div id="card-relatorio-visual" class="bg-gray-50 p-5 rounded-lg shadow-md border border-gray-200 mt-8">
             <div class="flex justify-between items-center mb-4">
@@ -410,7 +384,6 @@
                 </button>
             </div>
             
-            <!-- Div de visualização direta com formatação de quebra de linha -->
             <div class="relative">
                 <div id="relatorio-texto" class="w-full p-3 font-mono text-sm bg-gray-100 border border-gray-300 rounded-md overflow-x-auto" style="white-space: pre-wrap;">Gerando relatório...</div>
                 <div class="copy-feedback" id="relatorio-feedback">Copiado!</div>
@@ -419,11 +392,13 @@
     </template>
 
 
-    <!-- Canvas oculto para renderizar o PDF -->
     <canvas id="pdf-canvas" class="hidden"></canvas>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // A LINHA CORRIGIDA VEIO PARA CÁ
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
             // Definições de Elementos
             const dropzone = document.getElementById('dropzone');
             const fileUpload = document.getElementById('file-upload');
@@ -485,7 +460,7 @@
                 ]
             };
 
-            // "banco de dados"
+            // --- Lógica de Upload (CSV e Extrato) ---
             btnLoadCsv.addEventListener('click', () => csvUpload.click());
             csvUpload.addEventListener('change', (e) => handleCsvFile(e.target.files[0]));
 
@@ -509,7 +484,7 @@
                 e.stopPropagation();
             }
 
-            // Processar o CSV ou XLSX
+            // Função: Processar o CSV ou XLSX
             function handleCsvFile(file) {
                 if (!file) return;
 
@@ -553,7 +528,7 @@
                             throw new Error("Formato de ficheiro não suportado. Use .csv ou .xlsx");
                         }
 
-                        // processa os objetos
+                        // Agora, processa os objetos
                         processarDadosDeClientes(rowsAsObjects);
 
                     } catch (err) {
@@ -578,7 +553,7 @@
                 }
             }
             
-            
+            // Função: Encontra as colunas corretas e processa os dados
             function processarDadosDeClientes(rowsAsObjects) {
                 if (!rowsAsObjects || rowsAsObjects.length === 0) {
                     throw new Error("Ficheiro vazio ou mal formatado.");
@@ -586,7 +561,7 @@
                 
                 const headers = Object.keys(rowsAsObjects[0]);
                 
-                
+                // Lógica flexível para encontrar as colunas
                 const colunasNomePossiveis = ['nome / razão social', 'nome', 'razão social', 'cliente'];
                 const colunasCPFPossiveis = ['cpf/cnpj', 'cpf', 'cnpj', 'documento'];
                 const colunasNascimentoPossiveis = ['data de nascimento', 'nascimento', 'dt. nasc.', 'dt nascimento'];
@@ -609,7 +584,7 @@
                     return;
                 }
                 
-                /
+                // Converte os dados num formato otimizado para busca (Mapa)
                 clienteDB = {};
                 rowsAsObjects.forEach(row => {
                     const nome = row[clienteDBNomeColuna]?.trim().toUpperCase();
@@ -674,7 +649,7 @@
                 }
             }
 
-            
+            // --- Funções de Conversão ---
             
             async function convertPdfToImages(pdf) {
                 const base64Images = [];
@@ -719,85 +694,13 @@
                 setLoading(true, "A analisar com IA...");
                 setError(false);
                 clearResults();
-
-              
-                const apiKey = "AIzaSyD-msswYAReMXpObiN8KVb7AyBATbc2pIw"; //
-
                 
-                if (apiKey === "" || apiKey.length < 30) {
-                    setError(true, "ERRO DE CONFIGURAÇÃO: A 'apiKey' está em falta ou é inválida. Por favor, cole a sua chave de API do Google AI Studio no ficheiro .html (linha ~617).");
-                    setLoading(false);
-                    return;
-                }
-
+                // O URL agora aponta para a API na nuvem (Vercel)
                 const apiUrl = "/api/analisar";
-                
-                const systemPrompt = `Você é um assistente de advocacia especialista em expurgos inflacionários (Planos Bresser, Verão, Collor I, Collor II).
-Sua tarefa é analisar a(s) IMAGEM(NS) de um extrato de poupança antigo (via OCR) e extrair dados-chave para um formato JSON.
-É crucial que você associe *corretamente* cada plano à sua respectiva agência e conta.
-EXTRAIA O NOME DO TITULAR EXATAMENTE COMO APARECE, EM MAIÚSCULAS.
-
-Regras de Leitura Específicas:
-1.  **Plano Bresser (Jun/1987):**
-    * O saldo correto é o "SALDO ATUAL" que aparece no extrato de Junho/1987 (que inclui a correção do período).
-    * No extrato "PLAUDEZIR FELISBERTO DE ABREU", o saldo base correto é 27.146,51.
-2.  **Plano Verão (Jan/1989):**
-    * Saldo correto: "SDO. ANTERIOR" de Jan/89 (ou Saldo Final de Dez/88), ANTES da correção de Fev/89.
-    * Atenção à conversão de moeda (Cz$ para NCz$, corte de 3 zeros). O saldo deve ser em NCz$ (Ex: Cz$ 230.320,00 vira 230,32).
-    * "Dia Base" é o dia do crédito em Jan/89.
-3.  **Plano Collor II (Jan/1991):**
-    * Saldo correto: "SDO. ANTERIOR" de Jan/91 (ou Saldo Final de Dez/90).
-    * Exceção (Caso Eliete da Silva): Se o saldo anterior for zero, mas houver um depósito no "Dia Base" em Jan/91 (ex: "210191 21 DEP. DINHEIRO 80.000,00"), use o valor desse primeiro depósito como saldo base.
-    * Exclusão (Caso Fabio/Adilson): Preste atenção se o "Dia Base" é 01 ou 02.
-4.  **Geral:**
-    * Se o saldo for "0,00", extraia "0,00".
-    * Ignore planos onde o saldo é "Não Identificado".
-
-Formato da Resposta:
-Responda *apenas* com um objeto JSON válido, seguindo este formato exato:
-{
-  "titular": "...",
-  "banco": "...",
-  "planos": [
-    { "nomePlano": "...", "agencia": "...", "conta": "...", "saldoExtrato": "...", "dataBaseAniversario": "..." }
-  ]
-}
-
-Se um campo não for encontrado, retorne "Não Identificado".`;
-                
-                const userPrompt = "Analise esta(s) IMAGEM(NS) de extrato e retorne o JSON com os dados, conforme suas instruções.";
-                const contentParts = [];
-
-                if (base64ImageArray && base64ImageArray.length > 0) {
-                    contentParts.push({ text: userPrompt });
-                    base64ImageArray.forEach(base64Image => {
-                        contentParts.push({
-                            inlineData: {
-                                mimeType: mimeType, // 'image/png'
-                                data: base64Image
-                            }
-                        });
-                    });
-                } else {
-                    setError(true, "Nenhum dado de ficheiro para analisar.");
-                    setLoading(false);
-                    return;
-                }
 
                 const payload = {
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                    contents: [
-                        {
-                            role: "user",
-                            parts: contentParts
-                        }
-                    ],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        temperature: 0.0,
-                    }
+                    base64ImageArray: base64ImageArray,
+                    mimeType: mimeType
                 };
 
                 try {
@@ -809,39 +712,20 @@ Se um campo não for encontrado, retorne "Não Identificado".`;
 
                     if (!response.ok) {
                         const errorBody = await response.json();
-                        throw new Error(`Erro HTTP da API: ${errorBody.error?.message || response.statusText}`);
+                        throw new Error(`Erro HTTP da API: ${errorBody.error || response.statusText}`);
                     }
 
-                    const result = await response.json();
+                    const data = await response.json();
 
-                    console.log("Resposta completa da API Gemini:", JSON.stringify(result, null, 2));
-
-                    const candidate = result.candidates?.[0];
+                    if (data.erro) {
+                        throw new Error(data.erro);
+                    }
                     
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        const jsonText = candidate.content.parts[0].text;
-                        const data = JSON.parse(jsonText);
-                        
-                        if (data.erro) {
-                            throw new Error(data.erro);
-                        }
-                        
-                        currentJsonData = data;
-                        displayResults(data);
-                    } else {
-                        const blockReason = result.promptFeedback?.blockReason;
-                        if (blockReason) {
-                            throw new Error(`A API bloqueou o pedido. Motivo: ${blockReason}`);
-                        }
-                        
-                        // Mensagem de erro de depuração melhorada
-                        const errorContent = JSON.stringify(result.promptFeedback || result, null, 2);
-                        const erro = `A IA não retornou 'candidates' (conteúdo). Resposta da API: ${errorContent}`;
-                        throw new Error(erro);
-                    }
+                    currentJsonData = data;
+                    displayResults(data);
 
                 } catch (error) {
-                    console.error('Falha ao chamar API Gemini:', error);
+                    console.error('Falha ao chamar API:', error);
                     setError(true, `Falha na análise da IA: ${error.message}.`);
                 } finally {
                     setLoading(false);
@@ -980,7 +864,7 @@ Se um campo não for encontrado, retorne "Não Identificado".`;
                 const statusSelect = document.getElementById('select-status-cliente');
                 const statusCliente = statusSelect.options[statusSelect.selectedIndex].text;
 
-                let texto = `*** ANÁLISE DE EXPURGOS (VERIFIQUE COM ATENÇÃO!!!, VERIFIQUE SE O VALOR QUE A IA UTILIZOU COMO BASE PARA OS CALCULOS ESTA CERTO. ***\n`;
+                let texto = `*** ANÁLISE DE EXPURGOS (VIA FERRAMENTA IA) ***\n`;
                 texto += `TITULAR: ${data.titular}\n`;
                 texto += `CPF: ${cpf}\n`;
                 texto += `DATA NASC.: ${nascimento}\n`;
