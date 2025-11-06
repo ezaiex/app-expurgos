@@ -17,7 +17,7 @@ Regras de Leitura Específicas:
 3.  **Plano Collor II (Jan/1991):**
     * Saldo correto: "SDO. ANTERIOR" de Jan/91 (ou Saldo Final de Dez/90).
     * Exceção (Caso Eliete da Silva): Se o saldo anterior for zero, mas houver um depósito no "Dia Base" em Jan/91 (ex: "210191 21 DEP. DINHEIRO 80.000,00"), use o valor desse primeiro depósito como saldo base.
-    * Exclusão (Caso Fabio/Adilson): Preste atenção se o "Dia Base" é 01 ou 02.
+    * Exclusão (Caso Fabio/Adilson): Preste atenção se o "Dia Base" é 01 ou 2.
 4.  **Geral:**
     * Se o saldo for "0,00", extraia "0,00".
     * Ignore planos onde o saldo é "Não Identificado".
@@ -50,10 +50,12 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
+    // --- CORREÇÃO DO NOME DO MODELO ---
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-pro-vision",
         systemInstruction: systemPrompt
     });
+    // --- FIM DA CORREÇÃO ---
 
     try {
         const { base64ImageArray, mimeType } = req.body;
@@ -69,13 +71,10 @@ export default async function handler(req, res) {
             }
         }));
 
-        // --- AQUI ESTÁ A CORREÇÃO ---
-        // O texto foi envolvido em um objeto { text: "..." }
         const promptParts = [
             { text: "Analise esta(s) IMAGEM(NS) de extrato e retorne o JSON com os dados, conforme suas instruções." },
             ...imageParts
         ];
-        // --- FIM DA CORREÇÃO ---
 
         const result = await model.generateContent({
             contents: [{ role: "user", parts: promptParts }],
